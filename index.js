@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const fileUpload = require('express-fileupload');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
 const port = process.env.PORT || 5000;
@@ -8,7 +9,7 @@ require('dotenv').config();
 
 app.use(cors());
 app.use(express.json());
-
+app.use(fileUpload());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.39aol.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -25,10 +26,25 @@ async function run() {
 
     // post api
     app.post('/service', async (req, res) => {
-      console.log(req.body)
+
+      const name = req.body.name;
+      const email = req.body.email;
+      const pic = req.files.image;
+      const picData = pic.data;
+      const encodedPic = picData.toString('base64');
+      const imageBuffer = Buffer.from(encodedPic, 'base64');
+      const vollenter = {
+        name,
+        email,
+        image: imageBuffer
+      }
+      console.log(req)
+      const result = await collection.insertOne(vollenter);
+      res.json(result);
+      // console.log(req.body)
       // const service = req.body;
       // const result = await collection.insertOne(service)
-      res.json('result');
+      // res.json(result);
     })
 
     // get api
@@ -65,6 +81,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await adminCollection.deleteOne(query);
+      res.send(result)
+    })
+    // delete event
+    app.delete('/event/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection.deleteOne(query);
       res.send(result)
     })
 
